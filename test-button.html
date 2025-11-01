@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Тест встройки</title>
+    <script src="//api.bitrix24.com/api/v1/"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            text-align: center;
+        }
+        
+        .emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .info-box {
+            background: #f5f5f5;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .info-value {
+            color: #333;
+            font-family: monospace;
+            background: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        
+        .success {
+            color: #4caf50;
+            font-weight: 600;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .button:hover {
+            transform: scale(1.05);
+        }
+        
+        .button:active {
+            transform: scale(0.95);
+        }
+        
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #e83e8c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">🎉</div>
+        <h1>Встройка работает!</h1>
+        <p class="subtitle">Ваша кнопка успешно появилась</p>
+        
+        <div class="info-box" id="info">
+            <div style="text-align: center; color: #999;">Загрузка информации...</div>
+        </div>
+        
+        <div class="success">✅ Тест пройден</div>
+        
+        <button class="button" onclick="closeWindow()">Закрыть</button>
+    </div>
+    
+    <script>
+        BX24.init(function(){
+            console.log('🚀 Bitrix24 инициализирован');
+            
+            // Получаем информацию о размещении
+            const placement = BX24.placement.info();
+            console.log('📍 Placement info:', placement);
+            
+            // Получаем информацию о пользователе
+            BX24.callMethod('user.current', {}, function(result){
+                if(result.data()) {
+                    console.log('👤 Current user:', result.data());
+                }
+            });
+            
+            // Отображаем информацию
+            displayInfo(placement);
+        });
+        
+        function displayInfo(placement) {
+            const infoBox = document.getElementById('info');
+            
+            let html = '';
+            
+            // Placement (где встроена кнопка)
+            if (placement && placement.placement) {
+                html += `
+                    <div class="info-item">
+                        <span class="info-label">Тип встройки:</span>
+                        <span class="info-value">${placement.placement}</span>
+                    </div>
+                `;
+            }
+            
+            // Options (дополнительные данные)
+            if (placement && placement.options) {
+                // Dialog ID (для чата)
+                if (placement.options.DIALOG_ID || placement.options.dialogId) {
+                    const dialogId = placement.options.DIALOG_ID || placement.options.dialogId;
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Dialog ID:</span>
+                            <span class="info-value">${dialogId}</span>
+                        </div>
+                    `;
+                }
+                
+                // Contact ID (для CRM)
+                if (placement.options.ID) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Contact ID:</span>
+                            <span class="info-value">${placement.options.ID}</span>
+                        </div>
+                    `;
+                }
+                
+                // Entity Type
+                if (placement.options.ENTITY_TYPE) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Entity Type:</span>
+                            <span class="info-value">${placement.options.ENTITY_TYPE}</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Если нет данных
+            if (!html) {
+                html = `
+                    <div style="text-align: center; color: #999;">
+                        Нет дополнительной информации<br>
+                        <small>Проверьте консоль (F12) для деталей</small>
+                    </div>
+                `;
+            }
+            
+            infoBox.innerHTML = html;
+            
+            // Выводим всё в консоль для отладки
+            console.log('📦 Все данные placement:', placement);
+        }
+        
+        function closeWindow() {
+            console.log('👋 Закрываем приложение');
+            BX24.closeApplication();
+        }
+    </script>
+</body>
+</html>
