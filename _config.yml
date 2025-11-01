@@ -1,0 +1,5 @@
+# Разрешить загрузку в iframe
+webrick:
+  headers:
+    X-Frame-Options: ALLOWALL
+```
