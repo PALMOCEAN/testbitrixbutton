@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Установка встройки</title>
+    <script src="//api.bitrix24.com/api/v1/"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #0c5460;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0a4451;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Установка кнопки "Тест КП"</h1>
+        
+        <div id="status" class="status info">
+            Ожидание инициализации...
+        </div>
+        
+        <button id="installBtn" onclick="installPlacement()" disabled>
+            Установить встройку
+        </button>
+        
+        <button id="checkBtn" onclick="checkPlacements()" disabled>
+            Проверить установленные
+        </button>
+        
+        <button id="uninstallBtn" onclick="uninstallPlacement()" disabled>
+            Удалить встройку
+        </button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let isInitialized = false;
+
+        // Инициализация BX24
+        BX24.init(function() {
+            isInitialized = true;
+            document.getElementById('status').innerHTML = '✅ Готово к установке';
+            document.getElementById('status').className = 'status success';
+            document.getElementById('installBtn').disabled = false;
+            document.getElementById('checkBtn').disabled = false;
+            document.getElementById('uninstallBtn').disabled = false;
+            
+            console.log('BX24 инициализирован');
+        });
+
+        // Установка встройки
+        function installPlacement() {
+            if (!isInitialized) {
+                showError('BX24 не инициализирован');
+                return;
+            }
+
+            document.getElementById('status').innerHTML = '⏳ Установка...';
+            document.getElementById('status').className = 'status info';
+
+            BX24.callMethod(
+                'placement.bind',
+                {
+                    PLACEMENT: 'IM_TEXTAREA_ICON',
+                    HANDLER: 'https://palmocean.github.io/testbitrixbutton/test-button.html',
+                    TITLE: 'Тест КП',
+                    DESCRIPTION: 'Тестовая кнопка для генерации КП'
+                },
+                function(result) {
+                    if (result.error()) {
+                        showError('Ошибка установки: ' + result.error());
+                        console.error('Ошибка:', result.error());
+                    } else {
+                        showSuccess('Встройка успешно установлена!<br><br>' +
+                                  '<strong>Что делать дальше:</strong><br>' +
+                                  '1. Обновите страницу Bitrix24 (F5)<br>' +
+                                  '2. Откройте Контакт-центр → Открытые линии<br>' +
+                                  '3. Откройте любой чат<br>' +
+                                  '4. Найдите новую иконку возле поля ввода<br>' +
+                                  '5. Кликните на неё → увидите "Тест КП"');
+                        console.log('Успешно:', result.data());
+                    }
+                }
+            );
+        }
+
+        // Проверка установленных встроек
+        function checkPlacements() {
+            if (!isInitialized) {
+                showError('BX24 не инициализирован');
+                return;
+            }
+
+            document.getElementById('status').innerHTML = '⏳ Проверка...';
+            document.getElementById('status').className = 'status info';
+
+            BX24.callMethod('placement.list', {}, function(result) {
+                if (result.error()) {
+                    showError('Ошибка: ' + result.error());
+                } else {
+                    const placements = result.data();
+                    let html = '<h3>Установленные встройки:</h3>';
+                    
+                    if (placements.length === 0) {
+                        html += '<p>Нет установленных встроек</p>';
+                    } else {
+                        html += '<pre>' + JSON.stringify(placements, null, 2) + '</pre>';
+                    }
+                    
+                    document.getElementById('result').innerHTML = html;
+                    document.getElementById('status').innerHTML = '✅ Найдено встроек: ' + placements.length;
+                    document.getElementById('status').className = 'status success';
+                }
+            });
+        }
+
+        // Удаление встройки
+        function uninstallPlacement() {
+            if (!isInitialized) {
+                showError('BX24 не инициализирован');
+                return;
+            }
+
+            if (!confirm('Удалить встройку "Тест КП"?')) {
+                return;
+            }
+
+            document.getElementById('status').innerHTML = '⏳ Удаление...';
+            document.getElementById('status').className = 'status info';
+
+            BX24.callMethod(
+                'placement.unbind',
+                {
+                    PLACEMENT: 'IM_TEXTAREA_ICON',
+                    HANDLER: 'https://palmocean.github.io/testbitrixbutton/test-button.html'
+                },
+                function(result) {
+                    if (result.error()) {
+                        showError('Ошибка удаления: ' + result.error());
+                    } else {
+                        showSuccess('Встройка удалена!<br>Обновите страницу Bitrix24 (F5)');
+                        console.log('Удалено:', result.data());
+                    }
+                }
+            );
+        }
+
+        function showError(message) {
+            document.getElementById('status').innerHTML = '❌ ' + message;
+            document.getElementById('status').className = 'status error';
+        }
+
+        function showSuccess(message) {
+            document.getElementById('status').innerHTML = '✅ ' + message;
+            document.getElementById('status').className = 'status success';
+        }
+    </script>
+</body>
+</html>
