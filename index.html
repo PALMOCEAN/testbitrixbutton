@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Быстрые ответы</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <style>
+        body {
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        .list-group-item {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+        .category-header {
+            background-color: #e9ecef;
+            font-weight: bold;
+            cursor: default;
+        }
+        .category-header:hover {
+            background-color: #e9ecef;
+            transform: none;
+        }
+        #loadButton {
+            margin-bottom: 15px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+        .badge {
+            font-size: 0.7em;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <button id="loadButton" class="btn btn-primary w-100" onclick="loadAnswers()">
+            Загрузить ответы
+        </button>
+        
+        <div id="loadingIndicator" class="loading" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p>Загрузка шаблонов...</p>
+        </div>
+        
+        <ul class="list-group" id="answerList"></ul>
+    </div>
+
+<script type="text/javascript">
+    // Конфигурация шаблонов с категориями и действиями
+    const templates = {
+        'greeting': {
+            title: '👋 Приветствие',
+            items: [
+                {
+                    title: 'Приветствие',
+                    message: 'Здравствуйте! Рад приветствовать вас. Чем могу помочь?',
+                    action: 'greeting',
+                    badge: 'Стандарт'
+                },
+                {
+                    title: 'Приветствие (вечер)',
+                    message: 'Добрый вечер! Чем могу быть полезен?',
+                    action: 'greeting_evening',
+                    badge: 'Вечер'
+                }
+            ]
+        },
+        'info': {
+            title: '📋 Информация',
+            items: [
+                {
+                    title: 'Список складов',
+                    message: 'Наши склады:\n1. Москва, ул. Примерная, 1\n2. Санкт-Петербург, пр. Складской, 5\n3. Казань, ул. Логистическая, 10',
+                    action: 'warehouses_list',
+                    badge: 'Адреса'
+                },
+                {
+                    title: 'Часы работы',
+                    message: 'Мы работаем:\nПн-Пт: 9:00 - 18:00\nСб: 10:00 - 15:00\nВс: выходной',
+                    action: 'working_hours',
+                    badge: 'График'
+                }
+            ]
+        },
+        'shipping': {
+            title: '🚚 Доставка',
+            items: [
+                {
+                    title: 'Условия доставки',
+                    message: 'Доставка осуществляется в течение 2-5 рабочих дней. Бесплатная доставка при заказе от 5000 руб.',
+                    action: 'shipping_info',
+                    badge: 'Инфо'
+                },
+                {
+                    title: 'Отследить заказ',
+                    message: 'Для отслеживания заказа, пожалуйста, укажите номер заказа. Я проверю статус для вас.',
+                    action: 'track_order',
+                    badge: 'Трекинг'
+                }
+            ]
+        },
+        'closing': {
+            title: '👋 Завершение',
+            items: [
+                {
+                    title: 'Прощание',
+                    message: 'Спасибо за обращение! Всегда рады помочь. Хорошего дня!',
+                    action: 'goodbye',
+                    badge: 'Стандарт'
+                }
+            ]
+        }
+    };
+
+    let isLoaded = false;
+
+    // Функция загрузки ответов
+    function loadAnswers() {
+        if (isLoaded) {
+            alert('Ответы уже загружены!');
+            return;
+        }
+
+        const loadButton = document.getElementById('loadButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const answerList = document.getElementById('answerList');
+
+        // Показываем индикатор загрузки
+        loadButton.style.display = 'none';
+        loadingIndicator.style.display = 'block';
+
+        // Имитация загрузки (можно заменить на реальный API запрос)
+        setTimeout(() => {
+            createList();
+            loadingIndicator.style.display = 'none';
+            isLoaded = true;
+        }, 800);
+    }
+
+    // Создание списка с категориями
+    function createList() {
+        const answerList = document.getElementById('answerList');
+        answerList.innerHTML = '';
+
+        for (const categoryKey in templates) {
+            const category = templates[categoryKey];
+            
+            // Добавляем заголовок категории
+            answerList.innerHTML += `
+                <li class="list-group-item category-header">
+                    ${category.title}
+                </li>
+            `;
+
+            // Добавляем элементы категории
+            category.items.forEach(item => {
+                answerList.innerHTML += `
+                    <li class="list-group-item" 
+                        onclick="sendMessage('${escapeString(item.message)}', '${item.action}')">
+                        ${item.title}
+                        ${item.badge ? `<span class="badge bg-secondary">${item.badge}</span>` : ''}
+                    </li>
+                `;
+            });
+        }
+    }
+
+    // Экранирование строк для безопасной вставки в HTML
+    function escapeString(str) {
+        return str.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
+    }
+
+    // Отправка сообщения с выполнением логики
+    function sendMessage(message, action) {
+        // Выполняем логику в зависимости от действия
+        executeAction(action, message);
+
+        // Отправляем сообщение в чат
+        frameCommunicationSend({
+            'action': 'send', 
+            'message': message
+        });
+    }
+
+    // Логика действий
+    function executeAction(actionType, message) {
+        console.log(`Выполняется действие: ${actionType}`);
+        
+        switch(actionType) {
+            case 'greeting':
+            case 'greeting_evening':
+                // Логика для приветствия
+                console.log('Отправлено приветствие');
+                // Можно отправить аналитику, логировать, etc
+                logToAnalytics('greeting_sent', message);
+                break;
+                
+            case 'warehouses_list':
+                console.log('Отправлен список складов');
+                logToAnalytics('warehouses_info_sent', message);
+                break;
+                
+            case 'track_order':
+                console.log('Запрос отслеживания заказа');
+                logToAnalytics('tracking_requested', message);
+                // Здесь можно добавить логику для переключения в режим ожидания номера заказа
+                break;
+                
+            case 'shipping_info':
+                console.log('Отправлена информация о доставке');
+                logToAnalytics('shipping_info_sent', message);
+                break;
+                
+            case 'goodbye':
+                console.log('Завершение диалога');
+                logToAnalytics('conversation_closed', message);
+                break;
+                
+            default:
+                console.log('Неизвестное действие:', actionType);
+        }
+    }
+
+    // Функция для отправки аналитики (пример)
+    function logToAnalytics(eventName, data) {
+        // Здесь можно отправить данные в вашу систему аналитики
+        // Например, в Google Analytics, Яндекс.Метрику или свой сервер
+        console.log('Analytics:', eventName, data);
+        
+        // Пример отправки на свой сервер:
+        // fetch('https://your-server.com/analytics', {
+        //     method: 'POST',
+        //     headers: {'Content-Type': 'application/json'},
+        //     body: JSON.stringify({event: eventName, data: data, timestamp: Date.now()})
+        // });
+    }
+
+    // ============================================
+    // Bitrix24 Frame Communication (из документации)
+    // ============================================
+    
+    function frameCommunicationInit() {
+        if (!window.frameCommunication) {
+            window.frameCommunication = {timeout: {}};
+        }
+        if(typeof window.postMessage === 'function') {
+            window.addEventListener('message', function(event){
+                var data = {};
+                try { data = JSON.parse(event.data); } catch (err){}
+
+                if (data.action == 'init') {
+                    frameCommunication.uniqueLoadId = data.uniqueLoadId;
+                    frameCommunication.postMessageSource = event.source;
+                    frameCommunication.postMessageOrigin = event.origin;
+                }
+            });
+        }
+    }
+
+    function frameCommunicationSend(data) {
+        data['uniqueLoadId'] = frameCommunication.uniqueLoadId;
+        var encodedData = JSON.stringify(data);
+        
+        if (!frameCommunication.postMessageOrigin) {
+            clearTimeout(frameCommunication.timeout[encodedData]);
+            frameCommunication.timeout[encodedData] = setTimeout(function(){
+                frameCommunicationSend(data);
+            }, 10);
+            return true;
+        }
+
+        if(typeof window.postMessage === 'function') {
+            if(frameCommunication.postMessageSource) {
+                frameCommunication.postMessageSource.postMessage(
+                    encodedData,
+                    frameCommunication.postMessageOrigin
+                );
+            }
+        }
+    }
+
+    // Инициализация при загрузке
+    frameCommunicationInit();
+</script>
+</body>
+</html>
