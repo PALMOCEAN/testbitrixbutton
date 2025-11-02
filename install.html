@@ -1,169 +1,220 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Установка приложения</title>
-    <script src="//api.bitrix24.com/api/v1/"></script>
+    <title>Установка быстрых ответов для Bitrix24</title>
+    <script src="https://api.bitrix24.com/api/v1/"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             max-width: 600px;
             margin: 50px auto;
             padding: 20px;
-            text-align: center;
+            background: #f5f5f5;
         }
-        .status {
-            padding: 20px;
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .input-group {
             margin: 20px 0;
-            border-radius: 5px;
         }
-        .success {
-            background-color: #d4edda;
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #2fc6f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #1fb5e5;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-        .error {
-            background-color: #f8d7da;
+        .result.error {
+            background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-        .loading {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 6px;
+            color: #004085;
         }
-        button {
-            padding: 10px 30px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        button:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
+        .info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            color: #856404;
         }
     </style>
 </head>
 <body>
-    <h1>Установка приложения "Быстрые ответы"</h1>
-    
-    <div id="status" class="status loading">
-        Инициализация...
-    </div>
-    
-    <button id="installBtn" onclick="installPlacement()" disabled>
-        Установить встраивание в чат
-    </button>
-    
-    <div id="result"></div>
+    <div class="container">
+        <h1>🚀 Установка виджета "Быстрые ответы"</h1>
+        
+        <div class="info">
+            <strong>⚠️ Важно:</strong> Эту страницу нужно открыть в контексте Bitrix24 через встраивание приложения.
+        </div>
 
-<script>
-    let isInitialized = false;
-    
-    // Инициализация BX24
-    BX24.init(function() {
-        isInitialized = true;
-        document.getElementById('status').className = 'status success';
-        document.getElementById('status').innerHTML = '✅ Соединение с Bitrix24 установлено!';
-        document.getElementById('installBtn').disabled = false;
-        
-        console.log('BX24 инициализирован успешно');
-        
-        // Автоматически проверяем существующие placements
-        checkExistingPlacements();
-    });
-    
-    // Проверка существующих размещений
-    function checkExistingPlacements() {
-        BX24.callMethod(
-            'placement.list',
-            {},
-            function(result) {
-                if(result.error()) {
-                    console.error('Ошибка при проверке placements:', result.error());
-                } else {
-                    console.log('Существующие placements:', result.data());
-                    const placements = result.data();
-                    const hasImPlacement = placements.some(p => p.placement === 'IM_TEXTAREA_ICON');
-                    
-                    if(hasImPlacement) {
-                        document.getElementById('status').innerHTML = 
-                            '✅ Приложение уже установлено в чат!<br><small>Откройте любой чат и найдите иконку</small>';
-                        document.getElementById('installBtn').innerHTML = 'Переустановить';
-                    }
-                }
-            }
-        );
-    }
-    
-    // Установка placement
-    function installPlacement() {
-        const btn = document.getElementById('installBtn');
-        btn.disabled = true;
-        btn.innerHTML = 'Установка...';
-        
-        document.getElementById('status').className = 'status loading';
-        document.getElementById('status').innerHTML = '⏳ Установка размещения в чат...';
-        
-        BX24.callMethod(
-            'placement.bind',
-            {
-                PLACEMENT: 'IM_TEXTAREA_ICON',
-                HANDLER: 'https://palmocean.github.io/testbitrixbutton/',
-                TITLE: 'Быстрые ответы',
-                DESCRIPTION: 'Шаблоны для быстрых ответов',
-                LANG_ALL: {
-                    ru: {
-                        TITLE: 'Быстрые ответы',
-                        DESCRIPTION: 'Шаблоны для быстрых ответов'
+        <div class="status" id="status">
+            Подключение к Bitrix24...
+        </div>
+
+        <div id="installForm" style="display: none;">
+            <div class="input-group">
+                <label>URL обработчика:</label>
+                <input type="text" id="handlerUrl" value="https://palmocean.github.io/testbitrixbutton/quick-replies.html">
+            </div>
+
+            <div class="input-group">
+                <label>Название кнопки (RU):</label>
+                <input type="text" id="titleRu" value="Быстрые ответы">
+            </div>
+
+            <div class="input-group">
+                <label>Иконка (Font Awesome):</label>
+                <input type="text" id="iconName" value="fa-comments" placeholder="fa-comments">
+                <small style="color: #666;">Примеры: fa-bolt, fa-star, fa-heart, fa-comment-dots</small>
+            </div>
+
+            <div class="input-group">
+                <label>Контекст (где показывать):</label>
+                <input type="text" id="context" value="USER;CHAT" placeholder="USER;CHAT;LINES">
+                <small style="color: #666;">USER - личные чаты, CHAT - групповые, LINES - открытые линии, CRM - CRM чаты</small>
+            </div>
+
+            <button onclick="installWidget()" id="installBtn">Установить виджет</button>
+            <button onclick="checkInstalled()" style="background: #6c757d; margin-top: 5px;">Проверить установленные виджеты</button>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        BX24.init(function() {
+            document.getElementById('status').innerHTML = '✅ Подключено к Bitrix24: <strong>' + BX24.getDomain() + '</strong>';
+            document.getElementById('installForm').style.display = 'block';
+        });
+
+        function installWidget() {
+            const handlerUrl = document.getElementById('handlerUrl').value;
+            const titleRu = document.getElementById('titleRu').value;
+            const iconName = document.getElementById('iconName').value;
+            const context = document.getElementById('context').value;
+            
+            document.getElementById('installBtn').disabled = true;
+            document.getElementById('installBtn').textContent = 'Установка...';
+            
+            showResult('Регистрация виджета...', 'info');
+
+            BX24.callMethod(
+                'placement.bind',
+                {
+                    'PLACEMENT': 'IM_SIDEBAR',
+                    'HANDLER': handlerUrl,
+                    'LANG_ALL': {
+                        'ru': {
+                            'TITLE': titleRu
+                        },
+                        'en': {
+                            'TITLE': 'Quick Replies'
+                        }
                     },
-                    en: {
-                        TITLE: 'Quick Replies',
-                        DESCRIPTION: 'Templates for quick replies'
+                    'OPTIONS': {
+                        'iconName': iconName,
+                        'context': context,
+                        'role': 'USER',
+                        'color': 'BLUE',
+                        'extranet': 'N'
+                    }
+                },
+                function(result) {
+                    document.getElementById('installBtn').disabled = false;
+                    document.getElementById('installBtn').textContent = 'Установить виджет';
+                    
+                    if (result.error()) {
+                        showResult('❌ Ошибка: ' + result.error() + ' - ' + result.error_description(), 'error');
+                    } else {
+                        showResult('✅ Виджет успешно установлен! ID: ' + result.data() + '<br><br>Теперь откройте любой чат в Bitrix24 и проверьте правую панель (сайдбар).', 'success');
                     }
                 }
-            },
-            function(result) {
-                btn.disabled = false;
-                btn.innerHTML = 'Переустановить';
-                
-                if(result.error()) {
-                    console.error('Ошибка установки:', result.error());
-                    document.getElementById('status').className = 'status error';
-                    document.getElementById('status').innerHTML = 
-                        '❌ Ошибка: ' + result.error() + 
-                        '<br><small>' + result.error_description() + '</small>';
-                } else {
-                    console.log('✅ Placement установлен:', result.data());
-                    document.getElementById('status').className = 'status success';
-                    document.getElementById('status').innerHTML = 
-                        '✅ Успешно установлено!<br>' +
-                        '<small>ID placement: ' + result.data() + '</small><br><br>' +
-                        '<strong>Теперь откройте любой чат в Bitrix24 и найдите иконку "Быстрые ответы"</strong>';
-                    
-                    // Показываем результат
-                    document.getElementById('result').innerHTML = 
-                        '<pre>' + JSON.stringify(result.data(), null, 2) + '</pre>';
-                }
-            }
-        );
-    }
-    
-    // Таймаут для инициализации
-    setTimeout(function() {
-        if(!isInitialized) {
-            document.getElementById('status').className = 'status error';
-            document.getElementById('status').innerHTML = 
-                '❌ Не удалось подключиться к Bitrix24<br>' +
-                '<small>Убедитесь что открыли эту страницу из локального приложения в Bitrix24</small>';
+            );
         }
-    }, 5000);
-</script>
+
+        function checkInstalled() {
+            showResult('Проверка...', 'info');
+            
+            BX24.callMethod(
+                'placement.list',
+                {},
+                function(result) {
+                    if (result.error()) {
+                        showResult('❌ Ошибка: ' + result.error(), 'error');
+                    } else {
+                        const placements = result.data();
+                        const imSidebar = placements.filter(p => p.placement === 'IM_SIDEBAR');
+                        
+                        if (imSidebar.length > 0) {
+                            let info = '📋 Установленные виджеты IM_SIDEBAR:<br><br>';
+                            imSidebar.forEach((p, i) => {
+                                info += `${i + 1}. ID: ${p.id}, Handler: ${p.handler}<br>`;
+                            });
+                            showResult(info, 'success');
+                        } else {
+                            showResult('Виджеты IM_SIDEBAR не найдены', 'error');
+                        }
+                    }
+                }
+            );
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = 'result ' + type;
+            resultDiv.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
