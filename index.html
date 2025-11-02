@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Отправка КП</title>
+    <title>Быстрые ответы</title>
+    <script src="//api.bitrix24.com/api/v1/"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <style>
         body {
@@ -27,7 +28,7 @@
             background-color: #e9ecef;
             transform: none;
         }
-        #loadButton {
+        #loadButton, #installButton {
             margin-bottom: 15px;
         }
         .loading {
@@ -39,10 +40,22 @@
             font-size: 0.7em;
             margin-left: 5px;
         }
+        .alert {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
     <div class="container-fluid">
+        <!-- Алерт для статуса установки -->
+        <div id="installAlert" style="display: none;"></div>
+        
+        <!-- Кнопка установки (только если placement не установлен) -->
+        <button id="installButton" class="btn btn-success w-100" onclick="installPlacement()" style="display: none;">
+            📌 Установить в чат
+        </button>
+        
+        <!-- Кнопка загрузки ответов -->
         <button id="loadButton" class="btn btn-primary w-100" onclick="loadAnswers()">
             Загрузить ответы
         </button>
@@ -58,7 +71,7 @@
     </div>
 
 <script type="text/javascript">
-    // Конфигурация шаблонов с категориями и действиями
+    // Конфигурация шаблонов
     const templates = {
         'greeting': {
             title: '👋 Приветствие',
@@ -125,6 +138,85 @@
     };
 
     let isLoaded = false;
+    let isBX24Ready = false;
+
+    // Инициализация BX24
+    BX24.init(function() {
+        isBX24Ready = true;
+        console.log('✅ BX24 инициализирован');
+        
+        // Проверяем, установлен ли placement
+        checkPlacementInstalled();
+    });
+
+    // Проверка установки placement
+    function checkPlacementInstalled() {
+        BX24.callMethod('placement.list', {}, function(result) {
+            if(result.error()) {
+                console.error('Ошибка проверки placement:', result.error());
+                return;
+            }
+            
+            const placements = result.data();
+            const hasImPlacement = placements.some(p => p.placement === 'IM_TEXTAREA_ICON');
+            
+            if(!hasImPlacement) {
+                // Показываем кнопку установки
+                document.getElementById('installButton').style.display = 'block';
+                showAlert('info', '⚠️ Приложение не установлено в чат. Нажмите "Установить в чат" для активации.');
+            } else {
+                console.log('✅ Placement уже установлен');
+            }
+        });
+    }
+
+    // Установка placement
+    function installPlacement() {
+        if(!isBX24Ready) {
+            showAlert('danger', '❌ BX24 не инициализирован. Перезагрузите страницу.');
+            return;
+        }
+
+        const btn = document.getElementById('installButton');
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Установка...';
+
+        BX24.callMethod(
+            'placement.bind',
+            {
+                PLACEMENT: 'IM_TEXTAREA_ICON',
+                HANDLER: 'https://palmocean.github.io/testbitrixbutton/',
+                TITLE: 'Быстрые ответы',
+                DESCRIPTION: 'Шаблоны для быстрых ответов',
+                LANG_ALL: {
+                    ru: {
+                        TITLE: 'Быстрые ответы',
+                        DESCRIPTION: 'Шаблоны для быстрых ответов'
+                    }
+                }
+            },
+            function(result) {
+                if(result.error()) {
+                    console.error('Ошибка установки:', result.error());
+                    showAlert('danger', '❌ Ошибка: ' + result.error());
+                    btn.disabled = false;
+                    btn.innerHTML = '📌 Установить в чат';
+                } else {
+                    console.log('✅ Placement установлен:', result.data());
+                    showAlert('success', '✅ Успешно установлено! Теперь откройте любой чат и найдите иконку "Быстрые ответы"');
+                    btn.style.display = 'none';
+                }
+            }
+        );
+    }
+
+    // Показать алерт
+    function showAlert(type, message) {
+        const alertDiv = document.getElementById('installAlert');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.innerHTML = message;
+        alertDiv.style.display = 'block';
+    }
 
     // Функция загрузки ответов
     function loadAnswers() {
@@ -135,13 +227,10 @@
 
         const loadButton = document.getElementById('loadButton');
         const loadingIndicator = document.getElementById('loadingIndicator');
-        const answerList = document.getElementById('answerList');
 
-        // Показываем индикатор загрузки
         loadButton.style.display = 'none';
         loadingIndicator.style.display = 'block';
 
-        // Имитация загрузки (можно заменить на реальный API запрос)
         setTimeout(() => {
             createList();
             loadingIndicator.style.display = 'none';
@@ -157,14 +246,12 @@
         for (const categoryKey in templates) {
             const category = templates[categoryKey];
             
-            // Добавляем заголовок категории
             answerList.innerHTML += `
                 <li class="list-group-item category-header">
                     ${category.title}
                 </li>
             `;
 
-            // Добавляем элементы категории
             category.items.forEach(item => {
                 answerList.innerHTML += `
                     <li class="list-group-item" 
@@ -177,17 +264,14 @@
         }
     }
 
-    // Экранирование строк для безопасной вставки в HTML
+    // Экранирование строк
     function escapeString(str) {
         return str.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
     }
 
-    // Отправка сообщения с выполнением логики
+    // Отправка сообщения
     function sendMessage(message, action) {
-        // Выполняем логику в зависимости от действия
         executeAction(action, message);
-
-        // Отправляем сообщение в чат
         frameCommunicationSend({
             'action': 'send', 
             'message': message
@@ -201,9 +285,7 @@
         switch(actionType) {
             case 'greeting':
             case 'greeting_evening':
-                // Логика для приветствия
                 console.log('Отправлено приветствие');
-                // Можно отправить аналитику, логировать, etc
                 logToAnalytics('greeting_sent', message);
                 break;
                 
@@ -215,7 +297,6 @@
             case 'track_order':
                 console.log('Запрос отслеживания заказа');
                 logToAnalytics('tracking_requested', message);
-                // Здесь можно добавить логику для переключения в режим ожидания номера заказа
                 break;
                 
             case 'shipping_info':
@@ -233,24 +314,12 @@
         }
     }
 
-    // Функция для отправки аналитики (пример)
+    // Аналитика
     function logToAnalytics(eventName, data) {
-        // Здесь можно отправить данные в вашу систему аналитики
-        // Например, в Google Analytics, Яндекс.Метрику или свой сервер
         console.log('Analytics:', eventName, data);
-        
-        // Пример отправки на свой сервер:
-        // fetch('https://your-server.com/analytics', {
-        //     method: 'POST',
-        //     headers: {'Content-Type': 'application/json'},
-        //     body: JSON.stringify({event: eventName, data: data, timestamp: Date.now()})
-        // });
     }
 
-    // ============================================
-    // Bitrix24 Frame Communication (из документации)
-    // ============================================
-    
+    // Frame Communication (для отправки сообщений в чат)
     function frameCommunicationInit() {
         if (!window.frameCommunication) {
             window.frameCommunication = {timeout: {}};
@@ -291,7 +360,6 @@
         }
     }
 
-    // Инициализация при загрузке
     frameCommunicationInit();
 </script>
 </body>
